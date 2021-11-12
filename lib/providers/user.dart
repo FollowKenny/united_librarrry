@@ -1,25 +1,24 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:united_library/model/user.dart';
 
-enum ApplicationLoginState {
-  loggedOut,
-  loggedIn,
-}
-
-class Auth extends ChangeNotifier {
-  Auth() {
+class UserProvider extends ChangeNotifier {
+  UserProvider() {
     init();
   }
 
-  ApplicationLoginState _loginState = ApplicationLoginState.loggedIn; //to change to retrieve login page
-  ApplicationLoginState get loginState => _loginState;
+  AppUser? _user;
+  AppUser? get user => _user;
 
   Future<void> init() async {
     FirebaseAuth.instance.userChanges().listen((user) {
       if (user != null) {
-        _loginState = ApplicationLoginState.loggedIn;
+        _user = AppUser(
+          uid: user.uid,
+          email: user.email!,
+        );
       } else {
-        _loginState = ApplicationLoginState.loggedOut;
+        _user = null;
       }
       notifyListeners();
     });
@@ -27,22 +26,23 @@ class Auth extends ChangeNotifier {
 
   void signInWithEmailAndPassword(String email, String password) async {
     try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
+      UserCredential userCredential =
+          await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
-      _loginState = ApplicationLoginState.loggedIn;
+      _user = AppUser(uid: userCredential.user!.uid, email: userCredential.user!.email!,);
       notifyListeners();
     } on FirebaseAuthException catch (e) {
       print(e);
     }
   }
 
-  void registerAccount(String email, String password) async {
+  Future<void> registerAccount(String email, String password) async {
     try {
-      await FirebaseAuth.instance
+      UserCredential userCredential = await FirebaseAuth.instance
           .createUserWithEmailAndPassword(email: email, password: password);
-      _loginState = ApplicationLoginState.loggedIn;
+      _user = AppUser(uid: userCredential.user!.uid, email: userCredential.user!.email!,);
       notifyListeners();
     } on FirebaseAuthException catch (e) {
       print(e);
@@ -52,7 +52,7 @@ class Auth extends ChangeNotifier {
   void signOut() async {
     try {
       await FirebaseAuth.instance.signOut();
-      _loginState = ApplicationLoginState.loggedOut;
+      _user = null;
       notifyListeners();
     } on FirebaseAuthException catch (e) {
       print(e);
