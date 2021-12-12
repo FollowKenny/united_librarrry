@@ -5,6 +5,7 @@ import 'package:united_library/logic/app_init.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(MyApp(),
+  runApp(
+    const MyApp(),
   );
 }

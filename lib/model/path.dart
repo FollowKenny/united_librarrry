@@ -1,3 +1,4 @@
+
 class AppRoutePath {
   final bool isLoggedIn;
   final String? authAction;
@@ -5,9 +6,8 @@ class AppRoutePath {
   final bool isUnknown;
 
 
-  AppRoutePath.loggedOut()
-    : isLoggedIn = false,
-      libraryUid = null,
+  AppRoutePath.home(this.isLoggedIn)
+    : libraryUid = null,
       isUnknown = false,
       authAction = null;
   
@@ -16,15 +16,9 @@ class AppRoutePath {
       isUnknown = false,
       libraryUid = null;
 
-  AppRoutePath.libraries()
-    : isLoggedIn = true,
-      isUnknown = false,
-      libraryUid = null,
-      authAction = null;
-
   AppRoutePath.library(this.libraryUid)
-    : isLoggedIn = true,
-      isUnknown = false,
+    : isUnknown = false,
+      isLoggedIn = true,
       authAction = null;
   
   AppRoutePath.unknown()
@@ -32,4 +26,20 @@ class AppRoutePath {
       libraryUid = null,
       authAction = null,
       isUnknown = true;
+  
+  bool get isUnknownPage => isUnknown;
+
+  bool get isHomePage => !isUnknown && authAction == null && libraryUid == null;
+
+  bool get isLoggedOutStack => !isUnknown && !isLoggedIn;
+
+  bool get isLoggedOutPage => !isUnknown && !isLoggedIn && authAction == null;
+
+  bool get isLibrariesPage => !isUnknown && isLoggedIn && libraryUid == null;
+
+  bool get isLoginPage => authAction == 'login';
+
+  bool get isRegisterPage => authAction == 'register';
+
+  bool get isLibraryPage => libraryUid != null;
 }

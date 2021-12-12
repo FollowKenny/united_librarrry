@@ -3,9 +3,9 @@ import 'package:provider/provider.dart';
 import 'package:united_library/providers/user.dart';
 
 class MailAuth extends StatefulWidget {
-  const MailAuth({Key? key, required this.action}) : super(key: key);
-
   final String action;
+
+  const MailAuth({Key? key, required this.action}) : super(key: key);
 
   @override
   State<MailAuth> createState() => _MailAuthState();

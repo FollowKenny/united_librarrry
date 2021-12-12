@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:united_library/model/path.dart';
+import 'package:united_library/model/user.dart';
 import 'package:united_library/screens/libraries.dart';
 import 'package:united_library/screens/library.dart';
 import 'package:united_library/screens/logged_out.dart';
@@ -8,39 +9,21 @@ import 'package:united_library/screens/register.dart';
 
 class AppRouterDelegate extends RouterDelegate<AppRoutePath>
     with ChangeNotifier, PopNavigatorRouterDelegateMixin<AppRoutePath> {
-  bool _isLoggedOut = true;
-  String? _authAction;
-  String? _libraryUid;
-  bool _isUnknown = false;
-
+  AppRoutePath _routeState;
   @override
   final GlobalKey<NavigatorState> navigatorKey;
 
-  AppRouterDelegate() : navigatorKey = GlobalKey<NavigatorState>();
+  AppRouterDelegate(this._routeState)
+      : navigatorKey = GlobalKey<NavigatorState>();
 
   @override
   AppRoutePath get currentConfiguration {
-    if (_isUnknown) {
-      return AppRoutePath.unknown();
-    }
-
-    if (_isLoggedOut) {
-      return _authAction == null
-          ? AppRoutePath.loggedOut()
-          : AppRoutePath.auth(_authAction);
-    }
-
-    return _libraryUid == null
-        ? AppRoutePath.libraries()
-        : AppRoutePath.library(_libraryUid);
+    return _routeState;
   }
 
   @override
   Future<void> setNewRoutePath(AppRoutePath configuration) async {
-    _isLoggedOut = !configuration.isLoggedIn;
-    _isUnknown = configuration.isUnknown;
-    _authAction = configuration.authAction;
-    _isUnknown = configuration.isUnknown;
+    _routeState = configuration;
   }
 
   @override
@@ -48,35 +31,36 @@ class AppRouterDelegate extends RouterDelegate<AppRoutePath>
     return Navigator(
       key: navigatorKey,
       pages: [
-        if (_isUnknown)
+        if (_routeState.isUnknownPage)
           const MaterialPage(
-              child: Scaffold(
-            body: Text('404 BRO!'),
-          ))
-        else if (_isLoggedOut)
+            child: Scaffold(
+              body: Text('404 SIS/BRO/ETC!'),
+            ),
+          )
+        else if (_routeState.isLoggedOutStack)
           MaterialPage(
             key: const ValueKey('loggedOut'),
             child: LoggedOut(selectAction: _chooseAuthAction),
           )
-        else
+        else if (!_routeState.isLoggedOutStack)
           const MaterialPage(
             key: ValueKey('libraries'),
             child: Libraries(),
           ),
-        if (!_isUnknown && _isLoggedOut && _authAction == 'register')
+        if (_routeState.isRegisterPage)
           const MaterialPage(
             key: ValueKey('register'),
             child: Register(),
           )
-        else if (!_isUnknown && _isLoggedOut && _authAction == 'login')
+        else if (_routeState.isLoginPage)
           const MaterialPage(
             key: ValueKey('login'),
             child: Login(),
           )
-        else if (!_isUnknown && !_isLoggedOut && _libraryUid != null)
+        else if (_routeState.isLibraryPage)
           MaterialPage(
             key: const ValueKey('library'),
-            child: Library(uid: _libraryUid!),
+            child: Library(uid: _routeState.libraryUid!),
           ),
       ],
       onPopPage: (route, result) {
@@ -84,15 +68,7 @@ class AppRouterDelegate extends RouterDelegate<AppRoutePath>
           return false;
         }
 
-        if (_isUnknown) {
-          _isUnknown = false;
-        }
-
-        if (_isLoggedOut) {
-          _authAction = null;
-        } else {
-          _libraryUid = null;
-        }
+        _routeState = AppRoutePath.home(_routeState.isLoggedIn);
 
         notifyListeners();
         return true;
@@ -101,64 +77,63 @@ class AppRouterDelegate extends RouterDelegate<AppRoutePath>
   }
 
   _chooseAuthAction(String action) {
-    _authAction = action;
+    _routeState = AppRoutePath.auth(action);
     notifyListeners();
   }
 
   _chooseLibrary(String uid) {
-    _libraryUid = uid;
+    _routeState = AppRoutePath.library(uid);
     notifyListeners();
   }
 }
 
 class AppRouteInformationParser extends RouteInformationParser<AppRoutePath> {
+  AppUser? user;
+
+  AppRouteInformationParser({required this.user});
+
   @override
   Future<AppRoutePath> parseRouteInformation(
       RouteInformation routeInformation) async {
     final uri = Uri.parse(routeInformation.location!);
 
-    if (uri.pathSegments.isEmpty) {
-      return AppRoutePath.loggedOut();
+    if (uri.pathSegments.isEmpty ||
+        uri.pathSegments[0] == 'auth' ||
+        uri.pathSegments[0] == 'home') {
+      return AppRoutePath.home(user != null);
     }
 
-    if (uri.pathSegments[0] == 'auth') {     
+    if (user == null) {
+      if (uri.pathSegments[0] == 'register') {
+        return AppRoutePath.auth('register');
+      }
+
+      if (uri.pathSegments[0] == 'login') {
+        return AppRoutePath.auth('login');
+      }
+    } else {
       if (uri.pathSegments.length == 2) {
-        if (uri.pathSegments[1] == 'login') {
-          return AppRoutePath.auth('login');
-        } else if (uri.pathSegments[1] == 'register') {
-          return AppRoutePath.auth('register');
+        if (uri.pathSegments[0] == "library") {
+          return AppRoutePath.library(uri.pathSegments[1]);
         }
       }
-      return AppRoutePath.loggedOut();
-    } 
-    else if (uri.pathSegments[0] == 'libraries') {
-      if (uri.pathSegments.length == 2) {
-        return AppRoutePath.library(uri.pathSegments[1]);
-      }
-      return AppRoutePath.libraries();
     }
-
     // Handle unknown routes
     return AppRoutePath.unknown();
   }
 
   @override
   RouteInformation? restoreRouteInformation(AppRoutePath configuration) {
-    if (configuration.isUnknown) {
-      return const RouteInformation(location: '/404');
+    if (configuration.isRegisterPage) {
+      return const RouteInformation(location: 'register');
+    } else if (configuration.isLoginPage) {
+      return const RouteInformation(location: 'login');
+    } else if (configuration.isLoggedOutPage) {
+      return const RouteInformation(location: 'auth');
+    } else if (configuration.isLibrariesPage) {
+      return const RouteInformation(location: 'home');
+    } else if (configuration.isLibraryPage) {
+      return RouteInformation(location: 'library/${configuration.libraryUid}');
     }
-    if (!configuration.isLoggedIn) {
-      if (configuration.authAction == 'register') {
-        return const RouteInformation(location: '/auth/register');
-      }
-      else if (configuration.authAction == 'login') {
-        return const RouteInformation(location: '/auth/login');
-      }
-      return const RouteInformation(location: '/auth');
-    }
-    if (configuration.libraryUid != null) {
-      return RouteInformation(location: '/libraries/${configuration.libraryUid}');
-    }
-    return const RouteInformation(location: '/libraries');
   }
 }

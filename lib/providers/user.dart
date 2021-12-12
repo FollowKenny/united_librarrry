@@ -38,7 +38,7 @@ class UserProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> registerAccount(String email, String password) async {
+  void registerAccount(String email, String password) async {
     try {
       UserCredential userCredential = await FirebaseAuth.instance
           .createUserWithEmailAndPassword(email: email, password: password);
