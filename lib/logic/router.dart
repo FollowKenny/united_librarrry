@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:united_library/model/path.dart';
 import 'package:united_library/model/user.dart';
+import 'package:united_library/providers/route.dart';
 import 'package:united_library/screens/libraries.dart';
 import 'package:united_library/screens/library.dart';
 import 'package:united_library/screens/logged_out.dart';
@@ -9,81 +11,78 @@ import 'package:united_library/screens/register.dart';
 
 class AppRouterDelegate extends RouterDelegate<AppRoutePath>
     with ChangeNotifier, PopNavigatorRouterDelegateMixin<AppRoutePath> {
-  AppRoutePath _routeState;
+  final RouteProvider _routeProvider;
+  
   @override
   final GlobalKey<NavigatorState> navigatorKey;
 
-  AppRouterDelegate(this._routeState)
+  AppRouterDelegate(this._routeProvider)
       : navigatorKey = GlobalKey<NavigatorState>();
 
   @override
   AppRoutePath get currentConfiguration {
-    return _routeState;
+    return _routeProvider.route;
   }
 
   @override
   Future<void> setNewRoutePath(AppRoutePath configuration) async {
-    _routeState = configuration;
+    _routeProvider.updateRoute(configuration);
+    notifyListeners();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Navigator(
-      key: navigatorKey,
-      pages: [
-        if (_routeState.isUnknownPage)
-          const MaterialPage(
-            child: Scaffold(
-              body: Text('404 SIS/BRO/ETC!'),
-            ),
-          )
-        else if (_routeState.isLoggedOutStack)
-          MaterialPage(
-            key: const ValueKey('loggedOut'),
-            child: LoggedOut(selectAction: _chooseAuthAction),
-          )
-        else if (!_routeState.isLoggedOutStack)
-          const MaterialPage(
-            key: ValueKey('libraries'),
-            child: Libraries(),
-          ),
-        if (_routeState.isRegisterPage)
-          const MaterialPage(
-            key: ValueKey('register'),
-            child: Register(),
-          )
-        else if (_routeState.isLoginPage)
-          const MaterialPage(
-            key: ValueKey('login'),
-            child: Login(),
-          )
-        else if (_routeState.isLibraryPage)
-          MaterialPage(
-            key: const ValueKey('library'),
-            child: Library(uid: _routeState.libraryUid!),
-          ),
-      ],
-      onPopPage: (route, result) {
-        if (!route.didPop(result)) {
-          return false;
-        }
+    return Consumer<RouteProvider>(
+      builder: (context, routeProvider, child) {
+        return Navigator(
+          key: navigatorKey,
+          pages: [
+            if (routeProvider.route.isUnknownPage)
+              const MaterialPage(
+                child: Scaffold(
+                  body: Text('404 SIS/BRO/ETC!'),
+                ),
+              )
+            else if (!routeProvider.isLoggedIn)
+              const MaterialPage(
+                key: ValueKey('loggedOut'),
+                child: LoggedOut(),
+              )
+            else if (routeProvider.isLoggedIn)
+              const MaterialPage(
+                key: ValueKey('libraries'),
+                child: Libraries(),
+              ),
+            if (routeProvider.route.isRegisterPage)
+              const MaterialPage(
+                key: ValueKey('register'),
+                child: Register(),
+              )
+            else if (routeProvider.route.isLoginPage)
+              const MaterialPage(
+                key: ValueKey('login'),
+                child: Login(),
+              )
+            else if (routeProvider.route.isLibraryPage)
+              MaterialPage(
+                key: const ValueKey('library'),
+                child: LibraryScreen(uid: routeProvider.route.libraryUid!),
+              ),
+          ],
+          onPopPage: (route, result) {
+            if (!route.didPop(result)) {
+              return false;
+            }
 
-        _routeState = AppRoutePath.home(_routeState.isLoggedIn);
+            routeProvider
+                .updateRoute(AppRoutePath.home(routeProvider.route.isLoggedIn));
 
-        notifyListeners();
-        return true;
+            notifyListeners();
+            return true;
+          },
+        );
       },
     );
-  }
-
-  _chooseAuthAction(String action) {
-    _routeState = AppRoutePath.auth(action);
-    notifyListeners();
-  }
-
-  _chooseLibrary(String uid) {
-    _routeState = AppRoutePath.library(uid);
-    notifyListeners();
   }
 }
 

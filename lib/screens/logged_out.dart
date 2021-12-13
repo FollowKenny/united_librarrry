@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:united_library/model/path.dart';
+import 'package:united_library/providers/route.dart';
 
 class LoggedOut extends StatelessWidget {
-  const LoggedOut({required this.selectAction, Key? key}) : super(key: key);
-
-  final ValueChanged<String> selectAction;
+  const LoggedOut({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -20,11 +21,11 @@ class LoggedOut extends StatelessWidget {
             alignment: MainAxisAlignment.center,
             children: [
               ElevatedButton(
-                onPressed: () => selectAction('login'),
+                onPressed: () => Provider.of<RouteProvider>(context, listen: false).updateRoute(AppRoutePath.auth('login')),
                 child: const Text('LOG IN'),
               ),
               ElevatedButton(
-                onPressed: () => selectAction('register'),
+                onPressed: () => Provider.of<RouteProvider>(context, listen: false).updateRoute(AppRoutePath.auth('register')),
                 child: const Text('REGISTER'),
                 style: ElevatedButton.styleFrom(
                   primary: Theme.of(context).colorScheme.onPrimary,

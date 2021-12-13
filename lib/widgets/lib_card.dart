@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:united_library/model/path.dart';
+import 'package:united_library/providers/route.dart';
 
 class LibCard extends StatelessWidget {
   const LibCard({
@@ -17,6 +20,8 @@ class LibCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
+      onTap: () => Provider.of<RouteProvider>(context, listen: false)
+          .updateRoute(AppRoutePath.library('register')),
       child: Card(
         child: ListTile(
           leading: Icon(icon),
@@ -62,7 +67,6 @@ class LibCard extends StatelessWidget {
           ),
         ),
       ),
-      onTap: () => {},
     );
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:united_library/logic/router.dart';
 import 'package:united_library/model/path.dart';
+import 'package:united_library/providers/route.dart';
 import 'package:united_library/providers/user.dart';
 import 'package:united_library/screens/loading.dart';
 import 'package:united_library/screens/wrong.dart';
@@ -28,8 +29,18 @@ class _MyAppState extends State<MyApp> {
         }
 
         if (snapshot.connectionState == ConnectionState.done) {
-          return ChangeNotifierProvider(
-            create: (_) => UserProvider(),
+          return MultiProvider(
+            providers: [
+              ChangeNotifierProvider<UserProvider>(
+                // ChangeNotifierProvider(
+                create: (_) => UserProvider(),
+              ),
+              ChangeNotifierProxyProvider<UserProvider, RouteProvider>(
+                create: (context) => RouteProvider(isLoggedIn: false),
+                update: (context, userProvider, child) =>
+                    RouteProvider(isLoggedIn: userProvider.user != null),
+              ),
+            ],
             // child: const AppNavigator(),
             child: Consumer<UserProvider>(
               builder: (context, userProvider, child) {
@@ -40,7 +51,7 @@ class _MyAppState extends State<MyApp> {
                     user: userProvider.user,
                   ),
                   routerDelegate: AppRouterDelegate(
-                      AppRoutePath.home(userProvider.user != null)),
+                      Provider.of<RouteProvider>(context)),
                 );
               },
             ),
