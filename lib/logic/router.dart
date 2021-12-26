@@ -3,16 +3,17 @@ import 'package:provider/provider.dart';
 import 'package:united_library/model/path.dart';
 import 'package:united_library/model/user.dart';
 import 'package:united_library/providers/route.dart';
-import 'package:united_library/screens/libraries.dart';
-import 'package:united_library/screens/library.dart';
-import 'package:united_library/screens/logged_out.dart';
-import 'package:united_library/screens/login.dart';
-import 'package:united_library/screens/register.dart';
+import 'package:united_library/screens/entry_screen.dart';
+import 'package:united_library/screens/libraries_screen.dart';
+import 'package:united_library/screens/library_screen.dart';
+import 'package:united_library/screens/logged_out_screen.dart';
+import 'package:united_library/screens/login_screen.dart';
+import 'package:united_library/screens/register_screen.dart';
 
 class AppRouterDelegate extends RouterDelegate<AppRoutePath>
     with ChangeNotifier, PopNavigatorRouterDelegateMixin<AppRoutePath> {
   final RouteProvider _routeProvider;
-  
+
   @override
   final GlobalKey<NavigatorState> navigatorKey;
 
@@ -68,14 +69,25 @@ class AppRouterDelegate extends RouterDelegate<AppRoutePath>
                 key: const ValueKey('library'),
                 child: LibraryScreen(uid: routeProvider.route.libraryUid!),
               ),
+            if (routeProvider.route.isDetailsPage)
+              const MaterialPage(
+                key: ValueKey('details'),
+                child: EntryScreen(),
+              )
           ],
           onPopPage: (route, result) {
             if (!route.didPop(result)) {
               return false;
             }
 
-            routeProvider
-                .updateRoute(AppRoutePath.home(routeProvider.route.isLoggedIn));
+            if (routeProvider.route.isDetailsPage) {
+              routeProvider.updateRoute(
+                AppRoutePath.library(routeProvider.route.libraryUid),
+              );
+            } else {
+              routeProvider
+                  .updateRoute(AppRoutePath.home(routeProvider.route.isLoggedIn));
+            }
 
             notifyListeners();
             return true;
@@ -115,6 +127,11 @@ class AppRouteInformationParser extends RouteInformationParser<AppRoutePath> {
         if (uri.pathSegments[0] == "library") {
           return AppRoutePath.library(uri.pathSegments[1]);
         }
+      } else if (uri.pathSegments.length == 4) {
+        if (uri.pathSegments[0] == "library" &&
+            uri.pathSegments[2] == "entry") {
+          return AppRoutePath.entry(uri.pathSegments[1], uri.pathSegments[3]);
+        }
       }
     }
     // Handle unknown routes
@@ -133,6 +150,10 @@ class AppRouteInformationParser extends RouteInformationParser<AppRoutePath> {
       return const RouteInformation(location: 'home');
     } else if (configuration.isLibraryPage) {
       return RouteInformation(location: 'library/${configuration.libraryUid}');
+    } else if (configuration.isDetailsPage) {
+      return RouteInformation(
+          location:
+              'library/${configuration.libraryUid}/entry/${configuration.entryUid}');
     }
   }
 }

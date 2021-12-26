@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:united_library/model/title.dart';
+import 'package:provider/provider.dart';
+import 'package:united_library/model/entry.dart';
+import 'package:united_library/model/path.dart';
+import 'package:united_library/providers/route.dart';
 
 class LibraryScreen extends StatelessWidget {
   final String uid;
@@ -11,7 +14,7 @@ class LibraryScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Library Details'),
+        title: const Text('Library Entries'),
         centerTitle: true,
       ),
       body: GridView.builder(
@@ -22,12 +25,16 @@ class LibraryScreen extends StatelessWidget {
         ),
         itemCount: titles.length,
         itemBuilder: (BuildContext ctx, index) {
-          return Container(
-            alignment: Alignment.center,
-            child: Text(titles[index].title),
-            decoration: BoxDecoration(
-              color: Colors.amber,
-              borderRadius: BorderRadius.circular(15),
+          return InkWell(
+            child: Card(
+              child: Text(titles[index].title),
+            ),
+            onTap: () =>
+                Provider.of<RouteProvider>(context, listen: false).updateRoute(
+              AppRoutePath.entry(
+                'rfaz',
+                'fae',
+              ),
             ),
           );
         },

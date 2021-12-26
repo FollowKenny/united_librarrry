@@ -1,16 +1,14 @@
-import 'package:flutter/material.dart';
-
 class TitleModel {
   TitleModel.dummy()
-    : uid = 'love',
+    : entryUid = 'love',
       title = 'MyTitle',
       volume = 3,
       finishedOn = DateTime(2010, 10, 10),
-      stalenessPeriod = Duration(days: 50),
+      stalenessPeriod = const Duration(days: 50),
       rating = 2.5,
       comments = 'So fucking awesome';
 
-  String uid;
+  String entryUid;
   String title;
   int volume;
   DateTime finishedOn;
